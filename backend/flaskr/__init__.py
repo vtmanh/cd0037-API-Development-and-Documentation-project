@@ -20,11 +20,14 @@ QUESTIONS_PER_PAGE = 10
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
-def create_app(test_config=None):
+def create_app(test_config=None, test_db_url=None):
     # create and configure the app
     app = Flask(__name__)
     with app.app_context():
-        setup_db(app)
+        if test_config is None:
+            setup_db(app)
+        else:
+            setup_db(app, database_path=test_db_url)
     CORS(app)
 
     # Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
@@ -81,30 +84,28 @@ def create_app(test_config=None):
     """
     @app.route('/questions', methods=['GET'])
     def get_questions():
-        # pagination
-        page = request.args.get('page', 1, type=int)
-
-        # request data
-        category = request.args.get('category', None)
-
         try:
+            # request data & process request data
+            category = request.args.get('category', None)
+            page = request.args.get('page', 1, type=int)
+            start = (page - 1) * QUESTIONS_PER_PAGE
+            end = start + QUESTIONS_PER_PAGE
+
             # Query the database 
-            query = Question.query
-            if category:
-                query = query.filter(Question.category.ilike(category))
+            if category is None:
+                query = Question.query
+            else:
+                query = Question.query.filter_by(category=category)
 
             total_questions = query.count()
-            matching_questions = query.paginate(page, QUESTIONS_PER_PAGE, error_out=False)
-
+            current_questions = query.slice(start, end).all()
+            
             # Format for response
-            questions = [
-                question.format() 
-                for question in matching_questions.items
-            ]
+            questions = [question.format() for question in current_questions]
 
             # Get a list of available categories
-            categories = db.session.query(Category.type).distinct().all()
-            category_list = [cat.type for cat in categories]
+            all_categories = Category.query.all()
+            category_list=[cat.format() for cat in all_categories]
 
             return jsonify({
                 'success': True,
@@ -140,6 +141,8 @@ def create_app(test_config=None):
 
         try:
             # Delete the question
+            # deleting_question = Question(question)
+            # deleting_question.delete()
             db.session.delete(question)
             db.session.commit()
             return jsonify({
@@ -189,8 +192,9 @@ def create_app(test_config=None):
                 difficulty=difficulty
             )
             # submit db
-            db.session.add(new_question)
-            db.session.commit()
+            # db.session.add(new_question)
+            # db.session.commit()
+            new_question.insert()
             return jsonify({
                 'success': True,
                 'message': 'Question created successfully',
@@ -216,7 +220,7 @@ def create_app(test_config=None):
     only question that include that string within their question.
     Try using the word "title" to start.
     """
-    @app.route('/questions', methods=['POST'])
+    @app.route('/questions/search', methods=['POST'])
     def search_questions():
         # get data
         data = request.get_json()
@@ -241,11 +245,11 @@ def create_app(test_config=None):
                 })
 
             # format result
-            questiones = [question.format() for question in matching_questions]
+            questions = [question.format() for question in matching_questions]
             return jsonify({
                 'success': True,
                 'message': 'Questions retrieved successfully',
-                'questions': questiones
+                'questions': questions
             })
         except:
             return jsonify({
@@ -261,21 +265,11 @@ def create_app(test_config=None):
     categories in the left column will cause only questions of that
     category to be shown.
     """
-    @app.route('/categories/<category_id>/questions', methods=['GET'])
+    @app.route('/<category_id>', methods=['GET'])
     def get_questions_by_category(category_id):
         try:
-            # Query the database (case-insensitive)
-            category = Category.query.get(category_id)
-            
-            # bad
-            if not category:
-                return jsonify({
-                    'success': False,
-                    'message': 'Invalid category'
-                }), 400
-            
-            category_text = category.category
-            matching_questions = Question.query.filter(Question.category.ilike(category_text)).all()
+            # Query the database
+            matching_questions = Question.query.filter_by(category=category_id).all()
 
             # not found
             if not matching_questions:
@@ -286,7 +280,7 @@ def create_app(test_config=None):
                 })
             
             # format result
-            questions = [question.format() for question in matching_questions]
+            questions=[question.format() for question in matching_questions]
             return jsonify({
                 'success': True,
                 'message': 'Questions retrieved successfully',
@@ -309,16 +303,16 @@ def create_app(test_config=None):
     and shown whether they were correct or not.
     """
     @app.route('/quizzes', methods=['POST'])
-    def get_playing_question():
+    def get_quiz():
         data = request.get_json()
-        category = data.get('category', None)
+        category_id = data.get('category', None)
         previous_questions = data.get('previous_questions', [])
 
         try:
             # Query the database for a random question
             query = Question.query
-            if category:
-                query = query.filter(Question.category.ilike(category))
+            if category_id:
+                query = query.filter_by(category=category_id)
             
             # Exclude previous questions
             if previous_questions:
