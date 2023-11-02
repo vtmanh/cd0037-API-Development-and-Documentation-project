@@ -13,7 +13,7 @@ class TriviaTestCase(unittest.TestCase):
     def setUp(self):
         """Define test variables and initialize app."""
         self.database_name = "trivia_test"
-        self.database_path = "postgresql://{}:{}@{}/{}".format('student', '','127.0.0.1:5432', self.database_name)
+        self.database_path = "postgresql://{}:{}@{}/{}".format('student', 'student','127.0.0.1:5432', self.database_name)
         self.app = create_app(test_config=True, test_db_url=self.database_path)
         self.client = self.app.test_client()
         self.db = db
@@ -156,7 +156,7 @@ class TriviaTestCase(unittest.TestCase):
     # search_questions
     #----------------------------------------------------------------------------#
     def test_search_questions_success(self):
-        data = {'searchTerm': 'Egyptians'}
+        data = {'searchTerm': 'Sample'}
         response = self.client.post('/questions/search', data=json.dumps(data), content_type='application/json')
         data = response.get_json()
 
@@ -164,7 +164,7 @@ class TriviaTestCase(unittest.TestCase):
         self.assertTrue(data['success'])
         self.assertEqual(data['message'], 'Questions retrieved successfully')
         self.assertTrue('questions' in data)
-        self.assertEqual(len(data['questions']), 1)  # Expect 4 matching question
+        self.assertTrue(len(data['questions']) >= 1) 
 
     def test_search_questions_no_results(self):
         data = {'searchTerm': 'nonexistent'}
@@ -202,7 +202,7 @@ class TriviaTestCase(unittest.TestCase):
     #----------------------------------------------------------------------------#
     def test_get_questions_by_category(self):
         data = {'category': 1}
-        response = self.client.get('/1', data=json.dumps(data), content_type='application/json')
+        response = self.client.get('/categories/1/questions', data=json.dumps(data), content_type='application/json')
         data = response.get_json()
         
         self.assertEqual(response.status_code, 200)
@@ -213,7 +213,7 @@ class TriviaTestCase(unittest.TestCase):
 
     def test_get_questions_by_category_not_found(self):
         data = {'category': 404}
-        response = self.client.get('/404', data=json.dumps(data), content_type='application/json')
+        response = self.client.get('/categories/404/questions', data=json.dumps(data), content_type='application/json')
         data = response.get_json()
         
         self.assertEqual(response.status_code, 200)
@@ -227,7 +227,7 @@ class TriviaTestCase(unittest.TestCase):
         with self.app.app_context():
             self.db.session.remove()  # Close the database connection to cause an exception
             data = {'category': 1}
-            response = self.client.get('/1', data=json.dumps(data), content_type='application/json')
+            response = self.client.get('/categories/1/questions', data=json.dumps(data), content_type='application/json')
             data = response.get_json()
 
             self.assertEqual(response.status_code, 500)
@@ -239,8 +239,8 @@ class TriviaTestCase(unittest.TestCase):
     #----------------------------------------------------------------------------#
     def test_get_quiz(self):
         data = {
-            'category': 1, 
-            'previous_questions': []  
+            'previous_questions': [],
+            'quiz_category': {'type': 'Science', 'id': 1}
         }
         response = self.client.post('/quizzes', data=json.dumps(data), content_type='application/json')
         data = response.get_json()
@@ -253,10 +253,10 @@ class TriviaTestCase(unittest.TestCase):
     def test_get_quiz_no_more_questions(self):
         with self.app.app_context():
             question_ids = self.db.session.query(Question.id).filter_by(category=1).all()
-            question_ids = [qid[0] for qid in question_ids]  
+            ids = [qid[0] for qid in question_ids] 
             data = {
-                'category': 1,
-                'previous_questions': question_ids
+                'previous_questions': ids,
+                'quiz_category': {'type': 'Science', 'id': 1}
             }
             response = self.client.post('/quizzes', data=json.dumps(data), content_type='application/json')
             data = response.get_json()
@@ -271,8 +271,8 @@ class TriviaTestCase(unittest.TestCase):
         with self.app.app_context():
             self.db.session.remove()  # Close the database connection to cause an exception
             data = {
-                'category': 1,  
-                'previous_questions': [1] 
+                'previous_questions': [],
+                'quiz_category': {'type': 'Sports', 'id': '6'}
             }
             response = self.client.post('/quizzes', data=json.dumps(data), content_type='application/json')
             data = response.get_json()

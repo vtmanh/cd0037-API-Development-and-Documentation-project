@@ -10,128 +10,7 @@ This is an api to fetch books for trivia app
 
 ## Endpoints
 
-### `GET /categories`
-
-Endpoint to handle GET requests for all available categories
-
-### Parameters
-
-- None
-
-### Response
-
-Returns a JSON object with the following properties:
-
-- `success`: True on success, otherwise False.
-- `categories`: An array of category objects, each with the following properties:
-    - `id`: The unique identifier of the category.
-    - `type`: The name of category.
-
-### Example
-
-Request:
-
-```
-GET /categories
-```
-
-Response:
-
-```json
-{
-    "categories": [
-        {
-            "id": 1,
-            "type": "Science"
-        },
-        {
-            "id": 2,
-            "type": "Art"
-        },
-        {
-            "id": 3,
-            "type": "Geography"
-        },
-        {
-            "id": 4,
-            "type": "History"
-        },
-        {
-            "id": 5,
-            "type": "Entertainment"
-        },
-        {
-            "id": 6,
-            "type": "Sports"
-        }
-    ],
-    "success": true
-}
-
-```
-
-### `GET /categories`
-
-Endpoint to handle GET requests for all available categories
-
-### Parameters
-
-- None
-
-### Response
-
-Returns a JSON object with the following properties:
-
-- `success`: True on success, otherwise False.
-- `categories`: An array of category objects, each with the following properties:
-    - `id`: The unique identifier of the category.
-    - `type`: The name of category.
-
-### Example
-
-Request:
-
-```
-GET /categories
-```
-
-Response:
-
-```json
-{
-    "categories": [
-        {
-            "id": 1,
-            "type": "Science"
-        },
-        {
-            "id": 2,
-            "type": "Art"
-        },
-        {
-            "id": 3,
-            "type": "Geography"
-        },
-        {
-            "id": 4,
-            "type": "History"
-        },
-        {
-            "id": 5,
-            "type": "Entertainment"
-        },
-        {
-            "id": 6,
-            "type": "Sports"
-        }
-    ],
-    "success": true
-}
-
-```
-
-
-`GET '/categories'`
+### `GET '/categories'`
 
 - Fetches a dictionary of categories in which the keys are the ids and the value is the corresponding string of the category
 - Request Arguments: None
@@ -152,7 +31,7 @@ Response:
 
 ---
 
-`GET '/questions?page=${integer}'`
+### `GET '/questions?page=${integer}'`
 
 - Fetches a paginated set of questions, a total number of questions, all categories and current category string.
 - Request Arguments: `page` - integer
@@ -184,7 +63,7 @@ Response:
 
 ---
 
-`GET '/categories/${id}/questions'`
+### `GET '/categories/${id}/questions'`
 
 - Fetches questions for a cateogry specified by id request argument
 - Request Arguments: `id` - integer
@@ -208,7 +87,7 @@ Response:
 
 ---
 
-`DELETE '/questions/${id}'`
+### `DELETE '/questions/${id}'`
 
 - Deletes a specified question using the id of the question
 - Request Arguments: `id` - integer
@@ -216,7 +95,7 @@ Response:
 
 ---
 
-`POST '/quizzes'`
+### `POST '/quizzes'`
 
 - Sends a post request in order to get the next question
 - Request Body:
@@ -244,7 +123,7 @@ Response:
 
 ---
 
-`POST '/questions'`
+### `POST '/questions'`
 
 - Sends a post request in order to add a new question
 - Request Body:
@@ -262,7 +141,7 @@ Response:
 
 ---
 
-`POST '/questions'`
+### `POST '/questions'`
 
 - Sends a post request in order to search for a specific question by search term
 - Request Body:
@@ -290,7 +169,6 @@ Response:
   "currentCategory": "Entertainment"
 }
 ```
-
 
 ## Errors
 

@@ -54,15 +54,13 @@ def create_app(test_config=None, test_db_url=None):
             # retrieve all categories from DB
             all_categories = Category.query.all()
             # Format the categories using the format() method
-            categories = [
-                category.format()
-                for category in all_categories
-                ]
+            cattegories = {cat.id: cat.type for cat in all_categories}
             # Return the categories as a JSON response
             return jsonify({
                 'success': True,
-                'categories': categories
+                'categories': cattegories
             })
+            
         except:
             # Handle exceptions 
             return jsonify({
@@ -105,14 +103,13 @@ def create_app(test_config=None, test_db_url=None):
 
             # Get a list of available categories
             all_categories = Category.query.all()
-            category_list=[cat.format() for cat in all_categories]
-
+            cattegories = {cat.id: cat.type for cat in all_categories}
             return jsonify({
                 'success': True,
                 'questions': questions,
                 'total_questions': total_questions,
                 'current_category': category,
-                'categories': category_list,
+                'categories': cattegories,
             })
         except:
             return jsonify({
@@ -241,14 +238,19 @@ def create_app(test_config=None, test_db_url=None):
                 return jsonify({
                     'success': True,
                     'message': 'No questions found',
+                    'total_questions': 0,
+                    'current_category': 0,
                     'questions': []
                 })
 
             # format result
             questions = [question.format() for question in matching_questions]
+            current_category = matching_questions[0].category
             return jsonify({
                 'success': True,
                 'message': 'Questions retrieved successfully',
+                'total_questions': len(questions),
+                'current_category': current_category,
                 'questions': questions
             })
         except:
@@ -265,7 +267,7 @@ def create_app(test_config=None, test_db_url=None):
     categories in the left column will cause only questions of that
     category to be shown.
     """
-    @app.route('/<category_id>', methods=['GET'])
+    @app.route('/categories/<category_id>/questions', methods=['GET'])
     def get_questions_by_category(category_id):
         try:
             # Query the database
@@ -276,15 +278,22 @@ def create_app(test_config=None, test_db_url=None):
                 return jsonify({
                     'success': True,
                     'message': 'No questions found in the category',
-                    'questions': []
+                    'questions': [],
+                    'total_questions': 0,
+                    'current_category': 0,
+
                 })
             
             # format result
             questions=[question.format() for question in matching_questions]
+            current_category = matching_questions[0].category
             return jsonify({
                 'success': True,
                 'message': 'Questions retrieved successfully',
-                'questions': questions
+                'questions': questions,
+                'total_questions': len(questions),
+                'current_category': current_category,
+
             })
         except:
             return jsonify({
@@ -292,6 +301,7 @@ def create_app(test_config=None, test_db_url=None):
                 'message': 'An error occurred while retrieving questions'
             }), 500
 
+#----------------------------------------------------------------------------#
     """
     Create a POST endpoint to get questions to play the quiz.
     This endpoint should take category and previous question parameters
@@ -304,14 +314,16 @@ def create_app(test_config=None, test_db_url=None):
     """
     @app.route('/quizzes', methods=['POST'])
     def get_quiz():
-        data = request.get_json()
-        category_id = data.get('category', None)
-        previous_questions = data.get('previous_questions', [])
-
         try:
+            # handle request data
+            data = request.get_json()
+            category = data.get('quiz_category', None)            
+            previous_questions = data.get('previous_questions', [])
+
             # Query the database for a random question
             query = Question.query
-            if category_id:
+            if category:
+                category_id = category['id']
                 query = query.filter_by(category=category_id)
             
             # Exclude previous questions
